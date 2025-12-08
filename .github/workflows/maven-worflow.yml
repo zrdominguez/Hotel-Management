@@ -1,0 +1,47 @@
+# This workflow will build a package using Maven and then publish it to GitHub packages when a release is created
+# For more information see: https://github.com/actions/setup-java/blob/main/docs/advanced-usage.md#apache-maven-with-a-settings-path
+
+name: Maven Build Pipeline
+run-name: Maven Build Pipeline
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: checkout 
+        uses: actions/checkout@v4
+
+      - name: AWS Login
+        uses: aws-actions/configure-aws-credentials@v5.1.0
+        with:
+          aws-region: us-east-1
+          aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
+        
+      - name: Install JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          
+      - name: Build with Maven
+        run: mvn -B package --file backend/pom.xml
+
+      - name: list files
+        run: ls -la backend/target
+
+      # - name: Publish to GitHub Packages Apache Maven
+      #   run: mvn deploy -s $GITHUB_WORKSPACE/settings.xml
+      #   env:
+      #     GITHUB_TOKEN: ${{ github.token }}
