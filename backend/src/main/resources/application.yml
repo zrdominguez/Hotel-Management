@@ -1,3 +1,24 @@
-spring:
-  application:
-    name: hotel-management
+# backend/src/main/resources/application.yml
+# common settings for all environments
+spring:  
+    application:  
+        name: hotel-management
+    output:
+        # Enable colored logging output
+        ansi:
+            enabled: always
+        # Set active profile to 'dev' by default later save as environment variable
+    profiles:
+        active: dev
+    mongodb:
+      uri: mongodb://localhost:27017/hotel_reservation_db
+server:
+    port: 8080
+    # logging configuration common to all environments
+logging:
+    level:
+    # Set default logging levels
+    # Adjust these as needed
+        root: INFO
+    # Info level for web-related logs
+        '["org.springframework.web"]': INFO

@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: hotel-management-dev
+  mongodb:
+    uri: mongodb://localhost:27017/hotel_reservation_db
+server:
+  port: 8081
+logging:
+  level:
+    root: DEBUG
+    '["org.springframework.web"]': DEBUG
+
