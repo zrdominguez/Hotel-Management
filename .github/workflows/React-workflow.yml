@@ -9,6 +9,7 @@ on:
     branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -45,6 +46,7 @@ jobs:
         aws-region: us-east-1
         aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
+        aws-session-token: ${{ secrets.SESSION_TOKEN }}
       
     - name: AWS Deploy S3
       # You may pin to the exact commit or the version.
