@@ -58,6 +58,6 @@ jobs:
         # Name of S3 Bucket
         bucket: hotel-mgmt-zhd-bucket
         # A Local Source Directory to Upload
-        source: ./build
+        source: ./frontend/build
         # A Remote Target Directory to Upload
         target: frontend/ 
