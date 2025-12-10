@@ -1,9 +1,9 @@
 package com.skillstorm.hotel_management.controllers;
 
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.skillstorm.hotel_management.dtos.EmailRequest;
 import com.skillstorm.hotel_management.models.User;
 import com.skillstorm.hotel_management.services.UserService;
 
@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+
 
 
 
@@ -35,9 +36,9 @@ public class UserController {
     }
     
 
-    @PostMapping
-    public ResponseEntity<User> getUserByEmail(@RequestBody EmailRequest eRequest) {
-        User user = userService.getUserByEmail(eRequest.email());
+    @GetMapping
+    public ResponseEntity<User> getUserByEmail(@RequestParam String email) {
+        User user = userService.getUserByEmail(email);
         if (user != null) {
             return ResponseEntity.ok(user);
         } else {
