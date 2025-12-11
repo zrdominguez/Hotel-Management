@@ -6,6 +6,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.List;
 import java.util.Map;
 import java.util.Date;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 
 @Document(collection = "users")
 public class User {
@@ -24,8 +26,29 @@ public class User {
 	private String profileImage;
 	private Map<String, Object> preferences;
 	private List<Object> savedPaymentMethods;
+	@CreatedDate
 	private Date createdAt;
+	@LastModifiedDate
 	private Date updatedAt;
+
+	public User(String email, String password, String firstName, String lastName, String phoneNumber,
+			List<String> roles, Map<String, Object> preferences) {
+		this.email = email;
+		this.password = password;
+		this.firstName = firstName;
+		this.lastName = lastName;
+		this.phoneNumber = phoneNumber;
+		this.preferences = preferences;
+		this.roles = roles;
+		this.isEmailVerified = false;
+		this.provider = null;
+		this.providerId = null;
+		this.profileImage = null;
+		this.savedPaymentMethods = null;
+	}
+
+	public User(){}
+	
 
 	// Getters and setters
 	public String getId() { return id; }

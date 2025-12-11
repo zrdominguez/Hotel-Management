@@ -1,4 +1,4 @@
-package com.skillstorm.hotel_management.dtos;
+package com.skillstorm.hotel_management.dtos.Room;
 
 import java.util.List;
 

@@ -1,9 +1,10 @@
 package com.skillstorm.hotel_management.models;
-
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.List;
 import java.util.Date;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 
 @Document(collection = "rooms")
 public class Room {
@@ -22,7 +23,10 @@ public class Room {
 	private List<String> images;
 	private boolean isAvailable;
 	private String status;
+	
+	@CreatedDate
 	private Date createdAt;
+	@LastModifiedDate
 	private Date updatedAt;
 	
 	//constructors

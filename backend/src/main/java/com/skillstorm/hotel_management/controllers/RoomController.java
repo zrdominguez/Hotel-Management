@@ -3,8 +3,8 @@ package com.skillstorm.hotel_management.controllers;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.skillstorm.hotel_management.dtos.EditRoomDto;
-import com.skillstorm.hotel_management.dtos.RoomDto;
+import com.skillstorm.hotel_management.dtos.Room.EditRoomDto;
+import com.skillstorm.hotel_management.dtos.Room.RoomDto;
 import com.skillstorm.hotel_management.models.Room;
 import com.skillstorm.hotel_management.services.RoomService;
 

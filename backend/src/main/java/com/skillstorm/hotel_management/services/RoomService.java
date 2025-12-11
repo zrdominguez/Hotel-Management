@@ -5,8 +5,8 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
-import com.skillstorm.hotel_management.dtos.EditRoomDto;
-import com.skillstorm.hotel_management.dtos.RoomDto;
+import com.skillstorm.hotel_management.dtos.Room.EditRoomDto;
+import com.skillstorm.hotel_management.dtos.Room.RoomDto;
 import com.skillstorm.hotel_management.models.Room;
 import com.skillstorm.hotel_management.repositories.RoomRepository;
 
