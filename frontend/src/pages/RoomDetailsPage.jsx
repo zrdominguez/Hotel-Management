@@ -1,30 +1,58 @@
-import React, { useState } from 'react';
-// eslint-disable-next-line no-unused-vars
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import axios from 'axios';
+
 import { MainLayout } from '../components/layout/MainLayout';
-import { Card, Badge, Button, Input } from '../components/common/FormElements';
+import { Card, Badge, Button } from '../components/common/FormElements';
 import { Modal } from '../components/common/ModalComponents';
 import { useToast } from '../hooks/useToast';
-import { mockRooms, mockReservations } from '../utils/mockData';
+import { setRooms } from '../redux/slice/roomsSlice.js';
+
 
 const RoomDetailsPage = () => {
-  const { roomId } = useParams();
+  const { roomNumber } = useParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { addToast } = useToast();
+
+  const rooms = useSelector((state) => state.rooms.rooms);
+  const reservations = useSelector((state) => state.rooms.reservations);
+
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [checkInDate, setCheckInDate] = useState('');
   const [checkOutDate, setCheckOutDate] = useState('');
 
-  const room = mockRooms.find((r) => r.id === roomId);
+  // Fetch rooms from backend if store is empty
+  useEffect(() => {
+    if (rooms.length === 0) {
+      const fetchRooms = async () => {
+        try {
+          const res = await axios.get('http://localhost:8081/rooms/all');
+          dispatch(setRooms(Array.isArray(res.data) ? res.data : []));
+        } catch (err) {
+          console.error(err);
+          addToast('Failed to fetch rooms from server', 'error');
+        }
+      };
+      fetchRooms();
+    }
+  }, [rooms, dispatch, addToast]);
+
+  // Find the room in Redux store
+  const room = rooms.find((r) => r.roomNumber === roomNumber);
+
 
   if (!room) {
     return (
       <MainLayout>
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Room Not Found</h1>
-            <Button variant="primary" onClick={() => navigate('/browse-rooms')}>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              Room Not Found
+            </h1>
+            <Button className='text-white' variant="primary" onClick={() => navigate('/browse-rooms')}>
               Back to Browse Rooms
             </Button>
           </div>
@@ -35,39 +63,28 @@ const RoomDetailsPage = () => {
 
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2,
-      },
-    },
+    visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.2 } },
   };
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 },
-  };
+  const itemVariants = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } };
 
   const handleBooking = () => {
     if (!checkInDate || !checkOutDate) {
       addToast('Please select both check-in and check-out dates', 'error');
       return;
     }
-
     if (new Date(checkInDate) >= new Date(checkOutDate)) {
       addToast('Check-out date must be after check-in date', 'error');
       return;
     }
 
-    // Check availability
-    const isAvailable = !mockReservations.some((reservation) => {
+    // Check availability using Redux reservations
+    const isAvailable = !reservations.some((reservation) => {
       if (reservation.roomNumber !== room.number) return false;
       const resCheckIn = new Date(reservation.checkIn).getTime();
       const resCheckOut = new Date(reservation.checkOut).getTime();
       const newCheckIn = new Date(checkInDate).getTime();
       const newCheckOut = new Date(checkOutDate).getTime();
-      
       return resCheckIn < newCheckOut && resCheckOut > newCheckIn;
     });
 
@@ -82,39 +99,31 @@ const RoomDetailsPage = () => {
     setCheckOutDate('');
   };
 
-  const nights = checkInDate && checkOutDate 
+  const nights = checkInDate && checkOutDate
     ? Math.ceil((new Date(checkOutDate) - new Date(checkInDate)) / (1000 * 60 * 60 * 24))
     : 0;
+
   const subtotal = nights * room.pricePerNight;
   const tax = subtotal * 0.1;
   const total = subtotal + tax;
 
   return (
     <MainLayout>
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="space-y-6"
-      >
+      <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
         {/* Header */}
         <motion.div variants={itemVariants} className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{room.type} Room</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">Room #{room.number}</p>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">Room #{room.roomNumber}</p>
           </div>
-          <Button variant="secondary" onClick={() => navigate('/browse-rooms')}>
+          <Button className='text-white' variant="secondary" onClick={() => navigate('/browse-rooms')}>
             ← Back to Browse
           </Button>
         </motion.div>
 
         {/* Room Image */}
         <motion.div variants={itemVariants} className="rounded-lg overflow-hidden shadow-lg">
-          <img
-            src={room.image}
-            alt={`${room.type} Room`}
-            className="w-full h-96 object-cover"
-          />
+          <img src={room.image} alt={`${room.type} Room`} className="w-full h-96 object-cover" />
         </motion.div>
 
         {/* Room Info Grid */}
@@ -170,7 +179,6 @@ const RoomDetailsPage = () => {
           <div>
             <Card className="sticky top-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Book This Room</h3>
-              
               <div className="space-y-4">
                 {/* Status Badge */}
                 <div className="text-center">
@@ -194,12 +202,7 @@ const RoomDetailsPage = () => {
                   </div>
                 )}
 
-                {/* Book Button */}
-                <Button
-                  variant="primary"
-                  className="w-full"
-                  onClick={() => setShowBookingModal(true)}
-                >
+                <Button variant="primary" className="w-full" onClick={() => setShowBookingModal(true)}>
                   Book Now 🛏️
                 </Button>
               </div>
@@ -209,38 +212,17 @@ const RoomDetailsPage = () => {
       </motion.div>
 
       {/* Booking Modal */}
-      <Modal
-        isOpen={showBookingModal}
-        onClose={() => setShowBookingModal(false)}
-        title="Book Room"
-        size="md"
-      >
+      <Modal isOpen={showBookingModal} onClose={() => setShowBookingModal(false)} title="Book Room" size="md">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Check-in Date
-            </label>
-            <input
-              type="date"
-              value={checkInDate}
-              onChange={(e) => setCheckInDate(e.target.value)}
-              className="input-base"
-            />
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Check-in Date</label>
+            <input type="date" value={checkInDate} onChange={(e) => setCheckInDate(e.target.value)} className="input-base" />
           </div>
-
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Check-out Date
-            </label>
-            <input
-              type="date"
-              value={checkOutDate}
-              onChange={(e) => setCheckOutDate(e.target.value)}
-              className="input-base"
-            />
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Check-out Date</label>
+            <input type="date" value={checkOutDate} onChange={(e) => setCheckOutDate(e.target.value)} className="input-base" />
           </div>
 
-          {/* Booking Summary */}
           {nights > 0 && (
             <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg space-y-2">
               <div className="flex justify-between">
@@ -258,23 +240,9 @@ const RoomDetailsPage = () => {
             </div>
           )}
 
-          {/* Buttons */}
           <div className="flex gap-3">
-            <Button
-              variant="secondary"
-              className="flex-1 text-red-500"
-              
-              onClick={() => setShowBookingModal(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              className="flex-1"
-              onClick={handleBooking}
-            >
-              Confirm Booking
-            </Button>
+            <Button variant="secondary" className="flex-1 text-red-500" onClick={() => setShowBookingModal(false)}>Cancel</Button>
+            <Button variant="primary" className="flex-1" onClick={handleBooking}>Confirm Booking</Button>
           </div>
         </div>
       </Modal>

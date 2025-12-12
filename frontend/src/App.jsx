@@ -91,7 +91,7 @@ function App() {
           />
 
           <Route
-            path="/room/:roomId"
+            path="/room/:roomNumber"
             element={
               <ProtectedRoute>
                 <RoomDetailsPage />

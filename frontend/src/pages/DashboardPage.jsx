@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -17,6 +17,13 @@ import {
   generateMockRevenueData,
 } from '../utils/mockData';
 
+// Calculate occupancy rate
+// const calculateOccupancyRate = (reservations, rooms) => {
+//   if (!rooms.length) return 0;
+//   const occupied = reservations.filter(r => r.status === 'confirmed').length;
+//   return Math.round((occupied / rooms.length) * 100);
+// };
+
 const DashboardPage = () => {
   const { user, userRole } = useAuth();
   const { addToast } = useToast();
@@ -25,14 +32,61 @@ const DashboardPage = () => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [selectedReservation, setSelectedReservation] = useState(null);
-  const [reservations, setReservations] = useState(mockReservations);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  const [reservations, setReservations] = useState([]);
+  const [rooms, setRooms] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  // const [occupancyData, setOccupancyData] = useState([]);
+  // const [revenueData, setRevenueData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const occupancyData = useMemo(() => generateMockOccupancyData(), []);
   const revenueData = useMemo(() => generateMockRevenueData(), []);
+  //const occupancyRate = calculateOccupancyRate(reservations, rooms);
   const occupancyRate = calculateOccupancyRate();
+
+
+
+   // Fetch all data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+
+        const [reservationsRes, roomsRes/*, employeesRes, statsRes */] = await Promise.all([
+          
+          fetch("http://localhost:8081/reservations/all"),
+          fetch("http://localhost:8081/rooms/all"),
+          //fetch("http://localhost:8081/employees/all"),
+          //fetch("http://localhost:8081/stats/all"),,
+        ]);
+
+        if (!reservationsRes.ok || !roomsRes.ok /*|| !employeesRes.ok || !statsRes.ok*/) {
+          throw new Error('Failed to fetch data');
+        }
+
+        const reservationsData = await reservationsRes.json();
+        const roomsData = await roomsRes.json();
+        // const employeesData = await employeesRes.json();
+        //const statsData = await statsRes.json();
+
+        setReservations(reservationsData);
+        setRooms(roomsData);
+        //setEmployees(employeesData);
+        //setOccupancyData(statsData.occupancy);
+        //setRevenueData(statsData.revenue);
+      } catch (err) {
+        console.error(err);
+        addToast('Error fetching data from server', 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [addToast]);
 
   // Stat cards
   const stats = {
@@ -281,24 +335,24 @@ const DashboardPage = () => {
 
           {/* Featured Rooms Preview */}
           <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {mockRooms.slice(0, 3).map((room) => (
+            {rooms.slice(0, 3).map((room) => (
               <motion.div
-                key={room.id}
+                key={room.roomNumber}
                 whileHover={{ translateY: -4 }}
                 className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => navigate(`/room/${room.id}`)}
+                onClick={() => navigate(`/room/${room.roomNumber}`)}
               >
-                <div className="relative overflow-hidden bg-gray-200 h-40">
+                {/* <div className="relative overflow-hidden bg-gray-200 h-40">
                   <img
                     src={room.image}
                     alt={`${room.type} Room`}
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                   />
-                </div>
+                </div> */}
                 <div className="p-4">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{room.type}</h3>
                   <p className="text-2xl font-bold text-blue-600 mt-2">${room.pricePerNight}/night</p>
-                  <Button variant="primary" className="w-full mt-3" onClick={() => navigate(`/room/${room.id}`)}>
+                  <Button variant="primary" className="w-full mt-3" onClick={() => navigate(`/room/${room.roomNumber}`)}>
                     View Details
                   </Button>
                 </div>

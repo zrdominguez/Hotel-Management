@@ -50,7 +50,10 @@ export const Sidebar = ({ isOpen, onClose }) => {
         initial={{ x: -256 }}
         animate={{ x: isOpen ? 0 : -256 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="fixed md:static md:translate-x-0 left-0 top-0 h-screen w-64 bg-gradient-to-b from-blue-600 to-blue-700 text-white z-40 overflow-y-auto"
+        className={`fixed left-0 top-0 h-screen w-64 bg-gradient-to-b from-blue-600 to-blue-700 text-white z-40 overflow-y-auto
+          transition-transform duration-300
+          ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+        `}
       >
         {/* Logo */}
         <div className="p-6 border-b border-blue-500">

@@ -1,10 +1,13 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect  } from 'react';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '../components/layout/MainLayout';
 import { Card, Badge, Button, Input } from '../components/common/FormElements';
-import { mockRooms, mockReservations } from '../utils/mockData';
+import { useSelector, useDispatch } from "react-redux";
+import { setRooms, setReservations } from "../redux/slice/roomsSlice";
+
+
 
 const RoomBrowsingPage = () => {
   const navigate = useNavigate();
@@ -15,6 +18,15 @@ const RoomBrowsingPage = () => {
   const [checkOutDate, setCheckOutDate] = useState('');
   const [capacity, setCapacity] = useState(0);
   const [roomType, setRoomType] = useState('');
+  // const [rooms, setRooms] = useState([]);
+  // const [reservations, setReservations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const rooms = useSelector((state) => state.rooms.rooms);
+  const reservations = useSelector((state) => state.rooms.reservations);
+  const dispatch = useDispatch();
+
+  
+
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -39,7 +51,7 @@ const RoomBrowsingPage = () => {
     const checkInTime = new Date(checkIn).getTime();
     const checkOutTime = new Date(checkOut).getTime();
 
-    return !mockReservations.some((reservation) => {
+    return !reservations.some((reservation) => {
       if (reservation.roomNumber !== roomNumber) return false;
       const resCheckIn = new Date(reservation.checkIn).getTime();
       const resCheckOut = new Date(reservation.checkOut).getTime();
@@ -51,11 +63,13 @@ const RoomBrowsingPage = () => {
 
   // Filter and search rooms
   const filteredRooms = useMemo(() => {
-    return mockRooms.filter((room) => {
-      // Search filter
-      const matchesSearch = room.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           room.number.toString().includes(searchTerm) ||
-                           room.amenities.some((a) => a.toLowerCase().includes(searchTerm.toLowerCase()));
+    return rooms.filter((room) => {
+
+      // Search filter (handle null/undefined fields)
+      const matchesSearch =
+        room.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        room.roomNumber.toString().includes(searchTerm) ||
+        room.amenities?.some((a) => a.toLowerCase().includes(searchTerm.toLowerCase()));
 
       // Price filter
       const matchesPrice = room.pricePerNight >= minPrice && room.pricePerNight <= maxPrice;
@@ -67,14 +81,44 @@ const RoomBrowsingPage = () => {
       const matchesType = roomType === '' || room.type === roomType;
 
       // Availability filter
-      const matchesAvailability = isRoomAvailable(room.number, checkInDate, checkOutDate);
+      const matchesAvailability = isRoomAvailable(room.roomNumber, checkInDate, checkOutDate);
 
       return matchesSearch && matchesPrice && matchesCapacity && matchesType && matchesAvailability;
     });
-  }, [searchTerm, minPrice, maxPrice, capacity, roomType, checkInDate, checkOutDate]);
+  }, [searchTerm, minPrice, maxPrice, capacity, roomType, checkInDate, checkOutDate, rooms, reservations]);
 
   const roomTypes = ['Standard', 'Deluxe', 'Suite'];
-  const maxRoomPrice = Math.max(...mockRooms.map((r) => r.pricePerNight));
+  const maxRoomPrice = rooms.length > 0 ? Math.max(...rooms.map((r) => r.pricePerNight)) : 1000;
+
+  // Update maxPrice when rooms load
+  useEffect(() => {
+    if (rooms.length > 0) {
+      setMaxPrice(Math.max(...rooms.map(r => r.pricePerNight)));
+    }
+  }, [rooms]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const roomsRes = await fetch("http://localhost:8081/rooms/all");
+        const roomsData = await roomsRes.json();
+
+        const resRes = await fetch("http://localhost:8081/reservations/all");
+        const resData = await resRes.json();
+
+        dispatch(setRooms(Array.isArray(roomsData) ? roomsData : []));
+        dispatch(setReservations(Array.isArray(resData) ? resData : []));
+
+      } catch (err) {
+        console.error("Error fetching data", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
 
   return (
     <MainLayout>
@@ -208,90 +252,112 @@ const RoomBrowsingPage = () => {
         </motion.div>
 
         {/* Room Cards Grid */}
-        <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredRooms.map((room) => (
+          {filteredRooms.length > 0 ? (
             <motion.div
-              key={room.id}
-              whileHover={{ translateY: -4 }}
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={() => navigate(`/room/${room.id}`)}
+              variants={itemVariants}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
             >
-              {/* Room Image */}
-              <div className="relative overflow-hidden bg-gray-200 h-48">
-                <img
-                  src={room.image}
-                  alt={`${room.type} Room`}
-                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                />
-                <Badge variant={room.status === 'available' ? 'green' : 'yellow'} className="absolute top-4 right-4">
-                  {room.status.replace('_', ' ')}
-                </Badge>
-              </div>
+              {filteredRooms.map((room) => (
+                <motion.div
+                  key={room.roomNumber}
+                  whileHover={{ translateY: -4 }}
+                  className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                  onClick={() => navigate(`/room/${room.roomNumber}`)}
+                >
+                  {/* Room Image */}
+                  <div className="relative overflow-hidden bg-gray-200 h-48">
+                    <img
+                      src={room.image}
+                      alt={`${room.type} Room`}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    />
 
-              {/* Room Info */}
-              <div className="p-4 space-y-3">
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {room.type} Room
-                    </h3>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">#{room.number}</span>
-                  </div>
-                  <p className="text-2xl font-bold text-blue-600">${room.pricePerNight}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">per night</p>
-                </div>
-
-                {/* Capacity */}
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">👥</span>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    Up to {room.capacity} guest{room.capacity !== 1 ? 's' : ''}
-                  </span>
-                </div>
-
-                {/* Amenities Preview */}
-                <div className="flex flex-wrap gap-1">
-                  {room.amenities.slice(0, 3).map((amenity, idx) => (
-                    <Badge key={idx} variant="blue">
-                      {amenity}
+                    <Badge
+                      variant={room.status === "available" ? "green" : "yellow"}
+                      className="absolute top-4 right-4"
+                    >
+                      {room.status.replace("_", " ")}
                     </Badge>
-                  ))}
-                  {room.amenities.length > 3 && (
-                    <Badge variant="gray">+{room.amenities.length - 3} more</Badge>
-                  )}
-                </div>
+                  </div>
 
-                {/* View Details Button */}
-                <Button variant="primary" className="w-full" onClick={() => navigate(`/room/${room.id}`)}>
-                  View Details →
-                </Button>
-              </div>
+                  {/* Room Info */}
+                  <div className="p-4 space-y-3">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          {room.type} Room
+                        </h3>
+                        <span className="text-sm text-gray-600 dark:text-gray-400">
+                          #{room.roomNumber}
+                        </span>
+                      </div>
+
+                      <p className="text-2xl font-bold text-blue-600">
+                        ${room.pricePerNight}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">per night</p>
+                    </div>
+
+                    {/* Capacity */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">👥</span>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        Up to {room.capacity} guest{room.capacity !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+
+                    {/* Amenities */}
+                    <div className="flex flex-wrap gap-1">
+                      {room.amenities.slice(0, 3).map((amenity, idx) => (
+                        <Badge key={idx} variant="blue">
+                          {amenity}
+                        </Badge>
+                      ))}
+
+                      {room.amenities.length > 3 && (
+                        <Badge variant="gray">+{room.amenities.length - 3} more</Badge>
+                      )}
+                    </div>
+
+                    {/* View Details Button */}
+                    <Button
+                      variant="primary"
+                      className="w-full"
+                      onClick={() => navigate(`/room/${room.roomNumber}`)}
+                    >
+                      View Details →
+                    </Button>
+                  </div>
+                </motion.div>
+              ))}
             </motion.div>
-          ))}
-        </motion.div>
+          ) : (
+              // No Rooms Available
+              <motion.div variants={itemVariants} className="text-center py-12">
+              <p className="text-xl text-gray-600 dark:text-gray-400 mb-4 ">
+                No rooms available matching your search
+              </p>
+              <Button
+                className='text-white'
+                variant="secondary"
+                onClick={() => {
+                  setSearchTerm('');
+                  setMinPrice(0);
+                  setMaxPrice(maxRoomPrice);
+                  setCheckInDate('');
+                  setCheckOutDate('');
+                  setCapacity(0);
+                  setRoomType('');
+                }}
+              >
+                Reset Filters
+              </Button>
+            </motion.div>
+          )}
 
-        {/* No Results Message */}
-        {filteredRooms.length === 0 && (
-          <motion.div variants={itemVariants} className="text-center py-12">
-            <p className="text-xl text-gray-600 dark:text-gray-400 mb-4">
-              No rooms available matching your search
-            </p>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setSearchTerm('');
-                setMinPrice(0);
-                setMaxPrice(maxRoomPrice);
-                setCheckInDate('');
-                setCheckOutDate('');
-                setCapacity(0);
-                setRoomType('');
-              }}
-            >
-              Reset Filters
-            </Button>
-          </motion.div>
-        )}
+        
+        
+        
       </motion.div>
     </MainLayout>
   );
