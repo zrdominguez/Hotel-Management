@@ -12,6 +12,7 @@ import com.skillstorm.hotel_management.services.UserService;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -89,15 +90,36 @@ public class UserController {
         return ResponseEntity.ok(guests);
     }
     
+    /**
+     * Create a new user.
+     * @param userDto the DTO containing the user information
+     * @return the created user
+     */
     @PostMapping("new")
     public ResponseEntity<User> createUser(@RequestBody UserDto userDto) {
         User createdUser = userService.createUser(userDto);
         return ResponseEntity.ok(createdUser);
     }
 
+    /**
+     * Edit a user's profile.
+     * @param id the ID of the user to edit
+     * @param editProfileUserDto the DTO containing the updated user information
+     * @return the updated user
+     */
     @PutMapping("edit/{id}")
     public ResponseEntity<User> editUserProfile(@PathVariable String id, @RequestBody EditProfileUserDto editProfileUserDto) {
         return ResponseEntity.ok(userService.editUserProfile(id, editProfileUserDto));
     }
-    
+
+    /**
+     * Delete a user by their ID.
+     * @param id the ID of the user to delete
+     * @return a response entity with no content
+     */
+    @DeleteMapping("{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable String id) {
+        userService.deleteUser(id);
+        return ResponseEntity.noContent().build();
+    }
 }

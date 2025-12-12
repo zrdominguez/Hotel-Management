@@ -53,6 +53,13 @@ public class UserService {
         return userRepository.findByEmail(email).orElse(null);
     }
 
+
+    /**
+     * Create a new user.
+     * @param userDto the DTO containing the user information
+     * @return the created user
+     * @throws IllegalArgumentException if a user with the specified email already exists
+     */
     public User createUser(UserDto userDto) throws IllegalArgumentException {
         Optional<User> exists = userRepository.findByEmail(userDto.email());
         if (exists.isPresent()) {
@@ -71,6 +78,13 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    /**
+     * Edit a user's profile.
+     * @param id the ID of the user to edit
+     * @param editProfileUserDto the DTO containing the updated user information
+     * @return the updated user
+     * @throws IllegalArgumentException if the user with the specified ID is not found
+     */
     public User editUserProfile(String id, EditProfileUserDto editProfileUserDto) throws IllegalArgumentException {
         
         Optional<User> userOptional = userRepository.findById(id);
@@ -87,6 +101,20 @@ public class UserService {
             // user.setPreferences(preferences);
             
             return userRepository.save(user);
+        } else {
+            throw new IllegalArgumentException("User with id " + id + " not found");
+        }
+    }
+
+    /**
+     * Delete a user by their ID.
+     * @param id the ID of the user to delete
+     * @throws IllegalArgumentException if the user with the specified ID is not found
+     */
+    public void deleteUser(String id) throws IllegalArgumentException {
+        Optional<User> userOptional = userRepository.findById(id);
+        if (userOptional.isPresent()) {
+            userRepository.delete(userOptional.get());
         } else {
             throw new IllegalArgumentException("User with id " + id + " not found");
         }
