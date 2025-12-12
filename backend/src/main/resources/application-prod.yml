@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: hotel-management-prod
+  mongodb:
+    uri: mongodb://mongo-prod:27017/hotel_management_prod
+server:
+  port: 80
+logging:
+  level:
+    root: WARN
+    '["org.springframework.web"]': ERROR
+---
